@@ -38,14 +38,14 @@ use std::error::Error;
 use std::fmt;
 use std::f32::consts::FRAC_PI_4;
 use std::io;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Instant;
 
 use usvg;
 
 pub struct GlWindowDisplay {
     events_loop: EventsLoop,
-    gl_window: Rc<GlWindow>,
+    gl_window: Arc<GlWindow>,
     running: bool,
     cameras: Vec<GlWindowCamera>,
     resource_loader: FilesystemResourceLoader,
@@ -53,7 +53,7 @@ pub struct GlWindowDisplay {
 
 pub struct GlWindowCamera {
     eye: Eye,
-    gl_window: Rc<GlWindow>,
+    gl_window: Arc<GlWindow>,
     start: Instant,
 }
 
@@ -171,7 +171,7 @@ impl GlWindowDisplay {
             .with_dimensions(size);
         let context = ContextBuilder::new()
             .with_vsync(true);
-        let gl_window = Rc::new(glutin::GlWindow::new(window, context, &events_loop)?);
+        let gl_window = Arc::new(glutin::GlWindow::new(window, context, &events_loop)?);
 	let start = Instant::now();
 	let cameras = vec![
 	    GlWindowCamera { gl_window: gl_window.clone(), start, eye: Eye::Left },

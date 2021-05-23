@@ -62,7 +62,6 @@ use std::convert::TryInto;
 use std::mem;
 use std::ops::Range;
 use std::ptr;
-use std::rc::Rc;
 use std::slice;
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
@@ -104,7 +103,7 @@ pub struct MetalComputeProgram {
 
 #[derive(Clone)]
 pub struct MetalBuffer {
-    allocations: Rc<RefCell<BufferAllocations>>,
+    allocations: Arc<RefCell<BufferAllocations>>,
     mode: BufferUploadMode,
 }
 
@@ -610,7 +609,7 @@ impl Device for MetalDevice {
 
     fn create_buffer(&self, mode: BufferUploadMode) -> MetalBuffer {
         MetalBuffer {
-            allocations: Rc::new(RefCell::new(BufferAllocations {
+            allocations: Arc::new(RefCell::new(BufferAllocations {
                 private: None,
                 shared: None,
                 byte_size: 0,

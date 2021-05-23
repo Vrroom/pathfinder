@@ -25,7 +25,6 @@ use pathfinder_text::{FontContext, FontRenderOptions, TextRenderMode};
 use skribo::{FontCollection, FontFamily, FontRef, Layout as SkriboLayout, TextStyle};
 use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
-use std::rc::Rc;
 use std::sync::Arc;
 
 impl CanvasRenderingContext2D {
@@ -152,7 +151,7 @@ pub trait ToTextLayout {
 
 impl ToTextLayout for str {
     fn layout(&self, state: CanvasState) -> Cow<TextMetrics> {
-        let skribo_layout = Rc::new(skribo::layout(&TextStyle { size: state.0.font_size },
+        let skribo_layout = Arc::new(skribo::layout(&TextStyle { size: state.0.font_size },
                                                    &state.0.font_collection,
                                                    self));
         Cow::Owned(TextMetrics::new(skribo_layout,
@@ -169,7 +168,7 @@ impl ToTextLayout for String {
     }
 }
 
-impl ToTextLayout for Rc<SkriboLayout> {
+impl ToTextLayout for Arc<SkriboLayout> {
     fn layout(&self, state: CanvasState) -> Cow<TextMetrics> {
         Cow::Owned(TextMetrics::new((*self).clone(),
                                     state.0.font_size,
@@ -186,7 +185,7 @@ impl ToTextLayout for TextMetrics {
 
 #[cfg(feature = "pf-text")]
 #[derive(Clone)]
-pub struct CanvasFontContext(pub(crate) Rc<RefCell<CanvasFontContextData>>);
+pub struct CanvasFontContext(pub(crate) Arc<RefCell<CanvasFontContextData>>);
 
 pub(super) struct CanvasFontContextData {
     pub(super) font_context: FontContext<Font>,
@@ -206,7 +205,7 @@ impl CanvasFontContext {
             }
         }
 
-        CanvasFontContext(Rc::new(RefCell::new(CanvasFontContextData {
+        CanvasFontContext(Arc::new(RefCell::new(CanvasFontContextData {
             font_source,
             default_font_collection: Arc::new(default_font_collection),
             font_context: FontContext::new(),
@@ -246,7 +245,7 @@ impl CanvasFontContext {
 /// Internally, this structure caches most of its layout queries.
 #[derive(Clone)]
 pub struct TextMetrics {
-    skribo_layout: Rc<SkriboLayout>,
+    skribo_layout: Arc<SkriboLayout>,
     font_size: f32,
     align: TextAlign,
     baseline: TextBaseline,
@@ -295,7 +294,7 @@ struct VerticalMetrics {
 }
 
 impl TextMetrics {
-    pub fn new(skribo_layout: Rc<SkriboLayout>,
+    pub fn new(skribo_layout: Arc<SkriboLayout>,
                font_size: f32,
                align: TextAlign,
                baseline: TextBaseline)

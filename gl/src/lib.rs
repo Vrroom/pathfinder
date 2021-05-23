@@ -32,7 +32,7 @@ use std::mem;
 use std::ops::Range;
 use std::os::raw::c_char;
 use std::ptr;
-use std::rc::Rc;
+use std::sync::Arc;
 use std::str;
 use std::time::Duration;
 
@@ -607,7 +607,7 @@ impl Device for GLDevice {
         unsafe {
             let mut gl_buffer = 0;
             gl::GenBuffers(1, &mut gl_buffer); ck();
-            let object = Rc::new(GLBufferObject { gl_buffer });
+            let object = Arc::new(GLBufferObject { gl_buffer });
             GLBuffer { object, mode }
         }
     }
@@ -1242,7 +1242,7 @@ impl Drop for GLFramebuffer {
 }
 
 pub struct GLBuffer {
-    pub object: Rc<GLBufferObject>,
+    pub object: Arc<GLBufferObject>,
     pub mode: BufferUploadMode,
 }
 
@@ -1508,7 +1508,7 @@ impl VertexAttrTypeExt for VertexAttrType {
 }
 
 pub struct GLBufferDataReceiver {
-    object: Rc<GLBufferObject>,
+    object: Arc<GLBufferObject>,
     gl_sync: GLsync,
     range: Range<usize>,
     target: BufferTarget,
