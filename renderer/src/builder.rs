@@ -226,7 +226,7 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
         let clip_path_count = self.scene.clip_paths().len();
         let draw_path_count = self.scene.draw_paths().len();
         let effective_view_box = self.scene.effective_view_box(self.built_options);
-
+        println!("{}", clip_path_count);
         let built_clip_paths = executor.build_vector(clip_path_count, |path_index| {
             self.build_clip_path_on_cpu(PathBuildParams {
                 path_id: PathId(path_index as u32),
@@ -258,7 +258,6 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
         let PathBuildParams { path_id, view_box, built_options, scene, prepare_mode } = params;
         let path_object = &scene.get_clip_path(path_id.to_clip_path_id());
         let outline = scene.apply_render_options(path_object.outline(), built_options);
-
         let mut tiler = Tiler::new(self,
                                    path_id,
                                    &outline,
