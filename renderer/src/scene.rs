@@ -372,6 +372,7 @@ impl Scene {
                                   executor: E)
                                   where D: Device, E: Executor {
         let commands = self.build_into_vector(renderer, build_options, executor);
+        println!("{}", "built!!");
         renderer.begin_scene();
         commands.into_iter().for_each(|command| renderer.render_command(&command));
         renderer.end_scene();

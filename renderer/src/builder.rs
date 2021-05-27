@@ -226,16 +226,20 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
         let clip_path_count = self.scene.clip_paths().len();
         let draw_path_count = self.scene.draw_paths().len();
         let effective_view_box = self.scene.effective_view_box(self.built_options);
-        println!("{}", clip_path_count);
-        let built_clip_paths = executor.build_vector(clip_path_count, |path_index| {
-            self.build_clip_path_on_cpu(PathBuildParams {
-                path_id: PathId(path_index as u32),
-                view_box: effective_view_box,
-                prepare_mode: *prepare_mode,
-                built_options: &self.built_options,
-                scene: &self.scene,
-            })
-        });
+        let mut built_clip_paths = vec![];
+
+        for path_index in 0..clip_path_count {
+            let clip_path = self.build_clip_path_on_cpu(PathBuildParams {
+                    path_id: PathId(path_index as u32),
+                    view_box: effective_view_box,
+                    prepare_mode: *prepare_mode,
+                    built_options: &self.built_options,
+                    scene: &self.scene,
+                }, 
+                &built_clip_paths,
+            );
+            built_clip_paths.push(clip_path);
+        }
 
         let built_draw_paths = executor.build_vector(draw_path_count, |path_index| {
             self.build_draw_path_on_cpu(DrawPathBuildParams {
@@ -254,7 +258,7 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
         BuiltPaths { draw: built_draw_paths }
     }
 
-    fn build_clip_path_on_cpu(&self, params: PathBuildParams) -> BuiltPath {
+    fn build_clip_path_on_cpu(&self, params: PathBuildParams, built_clip_paths: &Vec<BuiltPath>) -> BuiltPath {
         let PathBuildParams { path_id, view_box, built_options, scene, prepare_mode } = params;
         let path_object = &scene.get_clip_path(path_id.to_clip_path_id());
         let outline = scene.apply_render_options(path_object.outline(), built_options);
@@ -265,7 +269,7 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
                                    view_box,
                                    &prepare_mode,
                                    path_object.clip_path(),
-                                   &[],
+                                   &built_clip_paths,
                                    TilingPathInfo::Clip);
 
         tiler.generate_tiles();
@@ -354,11 +358,13 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
                        paint_metadata: &[PaintMetadata],
                        built_paths: Option<BuiltPaths>,
                        prepare_mode: &PrepareMode) {
+        println!("finish_building");
         match self.sink.renderer_level {
             RendererLevel::D3D9 => self.sink.listener.send(RenderCommand::FlushFillsD3D9),
             RendererLevel::D3D11 => {}
         }
 
+        println!("call to build_tile_batches");
         self.build_tile_batches(paint_metadata, prepare_mode, built_paths);
     }
 
@@ -875,8 +881,10 @@ impl TileBatchBuilder {
                                                      draw_path_id_range: Range<DrawPathId>,
                                                      paint_metadata: &[PaintMetadata],
                                                      prepare_mode: &PrepareMode) {
+        println!("build_tile_batches_for_draw_path_display_item");
         let mut draw_tile_batch = None;
         for draw_path_id in draw_path_id_range.start.0..draw_path_id_range.end.0 {
+            println!("draw path id {}", draw_path_id);
             let draw_path_id = DrawPathId(draw_path_id);
             let draw_path = match self.level {
                 TileBatchBuilderLevel::D3D11 { .. } => {
@@ -945,7 +953,6 @@ impl TileBatchBuilder {
                 };
                 self.next_batch_id.0 += 1;
             }
-
             // Add clip path if necessary.
             let clip_path = match self.clip_batches_d3d11 {
                 None => None,
@@ -1016,6 +1023,7 @@ impl TileBatchBuilder {
 
         match draw_tile_batch {
             Some(DrawTileBatch::D3D11(draw_tile_batch)) => {
+                println!("Sent render command for draw tile batch");
                 self.draw_commands.push(RenderCommand::DrawTilesD3D11(draw_tile_batch));
             }
             Some(DrawTileBatch::D3D9(draw_tile_batch)) => {
@@ -1066,6 +1074,7 @@ impl TileBatchBuilder {
 
     fn send_to(self, sink: &SceneSink) {
         if let Some(clip_batches_d3d11) = self.clip_batches_d3d11 {
+            println!("sending clip render command ; batch len - {}", clip_batches_d3d11.prepare_batches.len());
             for prepare_batch in clip_batches_d3d11.prepare_batches.into_iter().rev() {
                 if prepare_batch.path_count > 0 {
                     sink.listener.send(RenderCommand::PrepareClipTilesD3D11(prepare_batch));
@@ -1096,17 +1105,20 @@ fn add_clip_path_to_batch(scene: &Scene,
                           clip_level: usize,
                           clip_batches_d3d11: &mut ClipBatchesD3D11)
                           -> Option<GlobalPathId> {
+    println!("add_clip_path_to_batch");
     match clip_path_id {
         None => None,
         Some(clip_path_id) => {
             match clip_batches_d3d11.clip_id_to_path_batch_index.get(&clip_path_id) {
                 Some(&clip_path_batch_index) => {
+                    println!("Found clip path id {}", clip_path_id.0);
                     Some(GlobalPathId {
                         batch_id: TileBatchId(clip_level as u32),
                         path_index: clip_path_batch_index,
                     })
                 }
                 None => {
+                    println!("Didn't find and creating");
                     let PreparedClipPath {
                         built_path: clip_path,
                         subclip_id
@@ -1117,6 +1129,8 @@ fn add_clip_path_to_batch(scene: &Scene,
                                                           prepare_mode,
                                                           clip_level,
                                                           clip_batches_d3d11);
+                    // (sumit): I think here he is trying to build the 
+                    // things in the correct order.
                     while clip_level >= clip_batches_d3d11.prepare_batches.len() {
                         let clip_tile_batch_id =
                             TileBatchId(clip_batches_d3d11.prepare_batches.len() as u32);
@@ -1158,10 +1172,14 @@ fn prepare_clip_path_for_gpu_binning(scene: &Scene,
             panic!("`prepare_clip_path_for_gpu_binning()` requires a GPU prepare mode!")
         }
     };
+    println!("prepare_clip_path_for_gpu_binning, clip_path_id {0}, clip_level {1}", clip_path_id.0, clip_level);
     let effective_view_box = scene.effective_view_box(built_options);
     let clip_path = scene.get_clip_path(clip_path_id);
 
     // Add subclip path if necessary.
+    println!("Beginning recursive call to add_clip_path_to_batch");
+    // (sumit): Strange that it happens in one case 
+    // and not in the other.
     let subclip_id = add_clip_path_to_batch(scene,
                                             sink,
                                             built_options,

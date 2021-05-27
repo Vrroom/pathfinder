@@ -42,6 +42,7 @@ impl TilingPathInfo {
         }
     }
 
+    // (sumit): path properties as bitmask.
     pub(crate) fn to_ctrl(&self) -> u8 {
         let mut ctrl = 0;
         match *self {
