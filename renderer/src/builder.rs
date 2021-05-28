@@ -358,13 +358,11 @@ impl<'a, 'b, 'c, 'd> SceneBuilder<'a, 'b, 'c, 'd> {
                        paint_metadata: &[PaintMetadata],
                        built_paths: Option<BuiltPaths>,
                        prepare_mode: &PrepareMode) {
-        println!("finish_building");
         match self.sink.renderer_level {
             RendererLevel::D3D9 => self.sink.listener.send(RenderCommand::FlushFillsD3D9),
             RendererLevel::D3D11 => {}
         }
 
-        println!("call to build_tile_batches");
         self.build_tile_batches(paint_metadata, prepare_mode, built_paths);
     }
 
@@ -881,10 +879,8 @@ impl TileBatchBuilder {
                                                      draw_path_id_range: Range<DrawPathId>,
                                                      paint_metadata: &[PaintMetadata],
                                                      prepare_mode: &PrepareMode) {
-        println!("build_tile_batches_for_draw_path_display_item");
         let mut draw_tile_batch = None;
         for draw_path_id in draw_path_id_range.start.0..draw_path_id_range.end.0 {
-            println!("draw path id {}", draw_path_id);
             let draw_path_id = DrawPathId(draw_path_id);
             let draw_path = match self.level {
                 TileBatchBuilderLevel::D3D11 { .. } => {
@@ -1023,7 +1019,6 @@ impl TileBatchBuilder {
 
         match draw_tile_batch {
             Some(DrawTileBatch::D3D11(draw_tile_batch)) => {
-                println!("Sent render command for draw tile batch");
                 self.draw_commands.push(RenderCommand::DrawTilesD3D11(draw_tile_batch));
             }
             Some(DrawTileBatch::D3D9(draw_tile_batch)) => {
@@ -1074,7 +1069,6 @@ impl TileBatchBuilder {
 
     fn send_to(self, sink: &SceneSink) {
         if let Some(clip_batches_d3d11) = self.clip_batches_d3d11 {
-            println!("sending clip render command ; batch len - {}", clip_batches_d3d11.prepare_batches.len());
             for prepare_batch in clip_batches_d3d11.prepare_batches.into_iter().rev() {
                 if prepare_batch.path_count > 0 {
                     sink.listener.send(RenderCommand::PrepareClipTilesD3D11(prepare_batch));
@@ -1105,20 +1099,17 @@ fn add_clip_path_to_batch(scene: &Scene,
                           clip_level: usize,
                           clip_batches_d3d11: &mut ClipBatchesD3D11)
                           -> Option<GlobalPathId> {
-    println!("add_clip_path_to_batch");
     match clip_path_id {
         None => None,
         Some(clip_path_id) => {
             match clip_batches_d3d11.clip_id_to_path_batch_index.get(&clip_path_id) {
                 Some(&clip_path_batch_index) => {
-                    println!("Found clip path id {}", clip_path_id.0);
                     Some(GlobalPathId {
                         batch_id: TileBatchId(clip_level as u32),
                         path_index: clip_path_batch_index,
                     })
                 }
                 None => {
-                    println!("Didn't find and creating");
                     let PreparedClipPath {
                         built_path: clip_path,
                         subclip_id
@@ -1172,12 +1163,10 @@ fn prepare_clip_path_for_gpu_binning(scene: &Scene,
             panic!("`prepare_clip_path_for_gpu_binning()` requires a GPU prepare mode!")
         }
     };
-    println!("prepare_clip_path_for_gpu_binning, clip_path_id {0}, clip_level {1}", clip_path_id.0, clip_level);
     let effective_view_box = scene.effective_view_box(built_options);
     let clip_path = scene.get_clip_path(clip_path_id);
 
     // Add subclip path if necessary.
-    println!("Beginning recursive call to add_clip_path_to_batch");
     // (sumit): Strange that it happens in one case 
     // and not in the other.
     let subclip_id = add_clip_path_to_batch(scene,

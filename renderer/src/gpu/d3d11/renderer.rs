@@ -415,9 +415,7 @@ impl<D> RendererD3D11<D> where D: Device {
                                          core: &mut RendererCore<D>,
                                          batch: &DrawTileBatchD3D11) {
         let tile_batch_id = batch.tile_batch_data.batch_id;
-        println!("prepare_and_draw_tiles B ; vecmap len = {}", self.tile_batch_info.len());
         self.prepare_tiles(core, &batch.tile_batch_data);
-        println!("prepare_and_draw_tiles A ; vecmap len = {}", self.tile_batch_info.len());
         let batch_info = self.tile_batch_info[tile_batch_id.0 as usize].clone();
         self.draw_tiles(core,
                         batch_info.tiles_d3d11_buffer_id,
@@ -430,7 +428,6 @@ impl<D> RendererD3D11<D> where D: Device {
                                 core: &mut RendererCore<D>,
                                 batch: &TileBatchDataD3D11) {
         core.stats.total_tile_count += batch.tile_count as usize;
-        println!("{}", format!("{:?}", batch.batch_id));
         // Upload tiles to GPU or allocate them as appropriate.
         let tiles_d3d11_buffer_id = self.allocate_tiles(core, batch.tile_count);
 
@@ -438,8 +435,6 @@ impl<D> RendererD3D11<D> where D: Device {
         let clip_buffer_ids = match batch.clipped_path_info {
             Some(ref clipped_path_info) => {
                 let clip_batch_id = clipped_path_info.clip_batch_id;
-                println!("count {0}, len {1}", clipped_path_info.clipped_path_count, self.tile_batch_info.len());
-                println!("clip batch id {}", clip_batch_id.0);
                 // (sumit) : Again there is some data that is expected to be there for this clip path but
                 // isn't there.
                 let clip_tile_batch_info = &self.tile_batch_info[clip_batch_id.0 as usize];

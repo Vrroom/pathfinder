@@ -335,7 +335,6 @@ impl<D> Renderer<D> where D: Device {
     /// 
     /// `begin_scene()` must have been called first.
     pub fn render_command(&mut self, command: &RenderCommand) {
-        println!("{}", format!("render command: {:?}", command));
         match *command {
             RenderCommand::Start { bounding_quad, path_count, needs_readable_framebuffer } => {
                 self.start_rendering(bounding_quad, path_count, needs_readable_framebuffer);
@@ -368,7 +367,6 @@ impl<D> Renderer<D> where D: Device {
             }
             RenderCommand::PopRenderTarget => self.pop_render_target(),
             RenderCommand::PrepareClipTilesD3D11(ref batch) => {
-                println!("{}", "prepareClip");
                 self.level_impl.require_d3d11().prepare_tiles(&mut self.core, batch)
             }
             RenderCommand::DrawTilesD3D9(ref batch) => {
