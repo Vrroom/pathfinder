@@ -256,10 +256,10 @@ impl Offset for Segment {
             return;
         }
 
-        debug!("--- SPLITTING ---");
-        debug!("... PRE-SPLIT: {:?}", self);
+        println!("--- SPLITTING ---");
+        println!("{}", format!("... PRE-SPLIT: {:?}", self));
         let (before, after) = self.split(0.5);
-        debug!("... AFTER-SPLIT: {:?} {:?}", before, after);
+        println!("{}", format!("... AFTER-SPLIT: {:?} {:?}", before, after));
         before.offset(distance, join, contour);
         after.offset(distance, join, contour);
     }
