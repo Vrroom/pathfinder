@@ -256,10 +256,7 @@ impl Offset for Segment {
             return;
         }
 
-        println!("--- SPLITTING ---");
-        println!("{}", format!("... PRE-SPLIT: {:?}", self));
         let (before, after) = self.split(0.5);
-        println!("{}", format!("... AFTER-SPLIT: {:?} {:?}", before, after));
         before.offset(distance, join, contour);
         after.offset(distance, join, contour);
     }
@@ -427,14 +424,12 @@ impl Contour {
             LineJoin::Round => {
                 let scale = distance.abs();
                 let transform = Transform2F::from_scale(scale).translate(join_point);
-                println!("join point {}", format!("{:?}", join_point));
-                println!("prev tangent {}", format!("{:?}", prev_tangent));
-                println!("next tangent {}", format!("{:?}", next_tangent));
                 let chord_from = (prev_tangent.to() - join_point).normalize();
                 let chord_to = (next_tangent.to() - join_point).normalize();
                 let chord = LineSegment2F::new(chord_from, chord_to);
-                println!("chord {}", format!("{:?}", chord));
-                self.push_arc_from_unit_chord(&transform, chord, ArcDirection::CW);
+                if !chord_from.x().is_nan() && !chord_from.y().is_nan() && !chord_to.x().is_nan() && !chord_to.y().is_nan() {
+                    self.push_arc_from_unit_chord(&transform, chord, ArcDirection::CW);
+                }
             }
         }
     }
