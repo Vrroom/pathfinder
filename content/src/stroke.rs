@@ -405,7 +405,6 @@ impl Contour {
                 next_tangent: LineSegment2F) {
         let (p0, p1) = (self.position_of_last(2), self.position_of_last(1));
         let prev_tangent = LineSegment2F::new(p0, p1);
-        println!("{}", format!("{:?}", prev_tangent));
         if prev_tangent.square_length() < EPSILON || next_tangent.square_length() < EPSILON {
             return;
         }
@@ -428,7 +427,9 @@ impl Contour {
             LineJoin::Round => {
                 let scale = distance.abs();
                 let transform = Transform2F::from_scale(scale).translate(join_point);
-                println!("transform {}", format!("{:?}", transform));
+                println!("join point {}", format!("{:?}", join_point));
+                println!("prev tangent {}", format!("{:?}", prev_tangent));
+                println!("next tangent {}", format!("{:?}", next_tangent));
                 let chord_from = (prev_tangent.to() - join_point).normalize();
                 let chord_to = (next_tangent.to() - join_point).normalize();
                 let chord = LineSegment2F::new(chord_from, chord_to);
