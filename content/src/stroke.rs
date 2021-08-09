@@ -428,9 +428,11 @@ impl Contour {
             LineJoin::Round => {
                 let scale = distance.abs();
                 let transform = Transform2F::from_scale(scale).translate(join_point);
+                println!("transform {}", format!("{:?}", transform));
                 let chord_from = (prev_tangent.to() - join_point).normalize();
                 let chord_to = (next_tangent.to() - join_point).normalize();
                 let chord = LineSegment2F::new(chord_from, chord_to);
+                println!("chord {}", format!("{:?}", chord));
                 self.push_arc_from_unit_chord(&transform, chord, ArcDirection::CW);
             }
         }
