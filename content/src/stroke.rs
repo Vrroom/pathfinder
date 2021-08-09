@@ -405,7 +405,7 @@ impl Contour {
                 next_tangent: LineSegment2F) {
         let (p0, p1) = (self.position_of_last(2), self.position_of_last(1));
         let prev_tangent = LineSegment2F::new(p0, p1);
-
+        println!("{}", format!("{:?}", prev_tangent));
         if prev_tangent.square_length() < EPSILON || next_tangent.square_length() < EPSILON {
             return;
         }
